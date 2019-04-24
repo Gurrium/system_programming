@@ -1,0 +1,9 @@
+bubble sort(random data): 75022132
+75022132bubble sort(asc data): 50004999
+50004999bubble sort(desc data): 99999999
+99999999bubble sort(not_unique data): 50004999
+50004999quick sort(random data): 148758
+148758quick sort(asc data): 50024998
+50024998quick sort(desc data): 50019998
+50019998quick sort(not_unique data): 72326
+72326

@@ -1,0 +1,242 @@
+学籍番号: 201913549
+名前: 金子 平
+課題番号: 1
+練習問題番号: 102, 105
+題名: 異常終了するプログラムの調査
+#### プログラム
+```c:segfo.c
+#include <stdio.h>
+
+int main() {
+  scanf("%d", 0x01);
+  
+  return 0;
+}
+```
+
+#### 実行結果
+```bash
+$ cc -g segfo.c
+$ ./a.out
+Segmentation fault: 11
+```
+
+#### 調査手順
+1. lldbを使ってプログラムを実行する
+```shell
+(lldb) run
+There is a running process, kill it and restart?: [Y/n] y
+Process 16483 exited with status = 9 (0x00000009)
+Process 17613 launched: '/home/ugrad/17/s1913549/workspace/system_programming/a.out' (x86_64)
+4
+Process 17613 stopped
+* thread #1, queue = 'com.apple.main-thread', stop reason = EXC_BAD_ACCESS (code=1, address=0x1d)
+    frame #0: 0x00007fff7138ea6b libsystem_c.dylib`__svfscanf_l + 294
+libsystem_c.dylib`__svfscanf_l:
+->  0x7fff7138ea6b <+294>: movl   %eax, (%rcx)
+    0x7fff7138ea6d <+296>: jmp    0x7fff71390111            ; <+6092>
+    0x7fff7138ea72 <+301>: movl   %r15d, -0x3e8(%rbp)
+    0x7fff7138ea79 <+308>: movslq %r8d, %rax
+Target 0: (a.out) stopped.
+```
+2. 10行目でeaxの値をrcxのアドレスに書き込んでいるのでそれぞれを表示させる．
+```shell
+(lldb) register read eax
+     eax = 0x00000004
+(lldb) register read rcx
+     rcx = 0x000000000000001d
+```
+
+#### 原因
+自分が書いたプログラムが確保していない領域に書き込もうとしたため
+
+#### 変更後のプログラム
+``` c:notsegfo.c
+#include <stdio.h>
+
+int main() {
+  int i;
+  scanf("%d", &i);
+  
+  return 0;
+}
+```
+
+#### 変更後の実行結果
+```shell
+> cc -g notsegfo.c
+> ./a.out
+
+```
+
+---
+
+題名: バブルソートとクイックソートの比較
+#### 実験方法
+以下のデータで実験をした．(プログラムは後述)
+データ数: 10,000 [個]
+
+random data
+seed値10で，rand()を使って生成したデータ
+
+asc data
+random dataを昇順に並べたデータ
+
+desc data
+random dataを降順に並べたデータ
+
+not uique data
+すべて同じデータ
+
+#### 実行結果
+比較回数
+bubble sort
+random data: 75,022,132
+asc data: 50,004,999
+desc data: 99,999,999
+not unique data: 50,004,999
+
+quick sort
+random data: 148,758
+asc data: 50,024,998
+desc data: 50,019,998
+not unique data: 72,326
+
+実行時間
+bubble sort
+random data
+0.44 real         0.44 user         0.00 sys
+asc data
+0.19 real         0.18 user         0.00 sys
+desc data
+0.39 real         0.38 user         0.00 sys
+not_unique data
+0.17 real         0.17 user         0.00 sys
+
+quick sort
+random data
+0.01 real         0.00 user         0.00 sys
+asc data
+0.13 real         0.12 user         0.00 sys
+desc data
+0.14 real         0.13 user         0.00 sys
+not_unique data
+0.00 real         0.00 user         0.00 sys
+
+#### 考察
+asc data以外はクイックソートの方が比較回数が少ないが，実行時間はどのデータでもクイックソートの方が短い．
+より重要なのは実行時間なので，クイックソートの方が効率がいいと言える．
+
+#### プログラム
+```c:bubble_sort.c
+#include <stdio.h>
+#include <stdlib.h>
+int DATA_SIZE = 10000;
+
+int comp_count = 0;
+
+void swap_array(int a[], int i, int j) {
+  int tmp;
+
+  tmp = a[i];
+  a[i] = a[j];
+  a[j] = tmp;
+}
+
+void sort(int data[], int count) {
+  int i, j;
+  int n = count - 1;
+
+  for (i = 0; i < n; i++) {
+    comp_count++;
+
+    for (j = 0; j < n - i; j++) {
+      comp_count++;
+
+      if (data[j] > data[j + 1]) {
+        comp_count++;
+
+        swap_array(data, j, j + 1);
+      }
+    }
+  }
+}
+
+int main(int argc, char *argv[]) {
+  int i;
+  int data[DATA_SIZE];
+  FILE *file;
+  file = fopen(argv[1], "r");
+
+  for(i = 0;i < DATA_SIZE;i++)
+    fscanf(file, "%d", &data[i]);
+
+  sort(data, DATA_SIZE);
+
+  printf("%d", comp_count);
+  return 0;
+}
+```
+
+```c:quick_sort.c
+#include <stdio.h>
+#include <stdlib.h>
+int DATA_SIZE = 10000;
+
+int comp_count = 0;
+
+void quicksort(int target[], int left, int right) {
+  int i, j, tmp;
+  int pivot = target[right];
+
+  comp_count++;
+  if(left >= right)
+    return;
+
+  i = left;
+  j = right - 1;
+  while(1) {
+    while(target[i] < pivot) {
+      i++;
+      comp_count++;
+    }
+    while(target[j] > pivot && j > i) {
+      j--;
+      comp_count++;
+    }
+
+    comp_count++;
+    if(i >= j)
+      break;
+
+    tmp = target[i];
+    target[i] = target[j];
+    target[j] = tmp;
+
+    i++;
+    j--;
+  }
+
+  tmp = target[i];
+  target[i] = target[right];
+  target[right] = tmp;
+
+  quicksort(target, left, i - 1);
+  quicksort(target, i + 1, right);
+}
+
+int main(int argc, char *argv[]) {
+  int i;
+  int data[DATA_SIZE];
+  FILE *file;
+  file = fopen(argv[1], "r");
+
+  for(i = 0;i < DATA_SIZE;i++)
+    fscanf(file, "%d", &data[i]);
+
+  quicksort(data, 0, DATA_SIZE - 1);
+
+  printf("%d", comp_count);
+  return 0;
+}
+```
