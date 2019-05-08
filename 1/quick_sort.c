@@ -55,6 +55,8 @@ int main(int argc, char *argv[]) {
 
   quicksort(data, 0, DATA_SIZE - 1);
 
-  printf("%d", comp_count);
+  for(i = 0;i < 5;i++)
+    printf("%d\n", data[i]);
+  // printf("%d", comp_count);
   return 0;
 }

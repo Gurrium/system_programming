@@ -42,6 +42,8 @@ int main(int argc, char *argv[]) {
 
   sort(data, DATA_SIZE);
 
-  printf("%d", comp_count);
+  for(i = 0;i < 5;i++)
+    printf("%d\n", data[i]);
+  printf("...", comp_count);
   return 0;
 }
