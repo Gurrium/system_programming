@@ -13,8 +13,13 @@ size_t my_strlcpy(char *dst, const char *src, size_t size) {
 }
 
 char *my_strdup(const char *s) {
-  char *t = (char *)malloc((strlen(s) + 1) * sizeof(char));
-  char *result = t;
+  char *t;
+  char *result;
+
+  t = (char *)malloc((strlen(s) + 1) * sizeof(char));
+  if(t == NULL)
+    exit(1);
+  result = t;
 
   while(*s != '\0')
     *t++ = *s++;
@@ -31,16 +36,18 @@ int main() {
   int i;
   char buf[5];
   char *dupbuf;
+  char *my_dupbuf;
 
   for(i = 0;i < 3;i++) {
     printf("%d: %s\n", i + 1, strings[i]);
     printf("strlcpy\nreturned value: %lu, string: %s\n", strlcpy(buf, strings[i], sizeof(buf)), buf);
     printf("my_strlcpy\nreturned value: %lu, string: %s\n\n", my_strlcpy(buf, strings[i], sizeof(buf)), buf);
-    printf("strdup\nstring starts from returned pointer: %s\n", strdup(strings[i]));
-    printf("my_strdup\nstring starts from returned pointer: %s\n\n", dupbuf = my_strdup(strings[i]));
-  }
+    printf("strdup\nstring starts from returned pointer: %s\n", dupbuf = strdup(strings[i]));
+    printf("my_strdup\nstring starts from returned pointer: %s\n\n", my_dupbuf = my_strdup(strings[i]));
 
-  free(dupbuf);
+    free(dupbuf);
+    free(my_dupbuf);
+  }
 
   return 0;
 }

@@ -158,39 +158,63 @@ int main(int argc, char *argv[]) {
   struct timespec start_ts;
   struct timespec end_ts;
   double results[NUMBER_OF_MEASURE];
-  int buff_size[] = {16384, 16384, 16384, 16384, 16384};
   char *buff;
+  int buff_size;
   int i, j;
 
-  if(argc != 2)
+  if(argc != 3)
     exit(1);
 
-  printf("#### %s\n", argv[1]);
-  for(i = 0;i < 5;i++) {
-    printf("buff_size: %d\n", buff_size[i]);
-    for(j = 0;j < NUMBER_OF_MEASURE;j++) {
-      if((buff = (char *)malloc(buff_size[i] * sizeof(char))) == NULL)
-        exit(1);
+  if((buff_size = atoi(argv[2])) == 0) {
+    perror("second arument should be number");
+    exit(1);
+  };
 
+  if((buff = (char *)malloc(buff_size * sizeof(char))) == NULL)
+      exit(1);
+
+  printf("%s, buff size: %d\n", argv[1], buff_size);
+  if(strcmp(argv[1], "fgetc") == 0) {
+    for(i = 0;i < NUMBER_OF_MEASURE;i++) {
       clock_gettime(CLOCK_MONOTONIC, &start_ts);
-      if(strcmp(argv[1], "fgetc") == 0)
-        fgetc_copy();
-      else if(strcmp(argv[1], "fgets") == 0) {
-        fgets_copy(buff, buff_size[i]);
-      } else if(strcmp(argv[1], "fread") == 0) {
-        fread_copy(buff, buff_size[i]);
-      } else if(strcmp(argv[1], "read") == 0) {
-        read_copy(buff, buff_size[i]);
-      }
+      fgetc_copy();
       clock_gettime(CLOCK_MONOTONIC, &end_ts);
-      results[j] = (end_ts.tv_sec * pow(10, 9) + end_ts.tv_nsec) - (start_ts.tv_sec * pow(10, 9) + start_ts.tv_nsec);
-      printf("%d: %lf[s]\n", j, results[j] * pow(10, -9));
 
-      free(buff);
+      results[i] = (end_ts.tv_sec * pow(10, 9) + end_ts.tv_nsec) - (start_ts.tv_sec * pow(10, 9) + start_ts.tv_nsec);
+      printf("%d: %lf[s]\n", i, results[i] * pow(10, -9));
     }
-    printf("average: %lf[s]\n", average(results) * pow(10, -9));
-    printf("\n");
+  } else if(strcmp(argv[1], "fgets") == 0) {
+    for(i = 0;i < NUMBER_OF_MEASURE;i++) {
+      clock_gettime(CLOCK_MONOTONIC, &start_ts);
+      fgets_copy(buff, buff_size);
+      clock_gettime(CLOCK_MONOTONIC, &end_ts);
+
+      results[i] = (end_ts.tv_sec * pow(10, 9) + end_ts.tv_nsec) - (start_ts.tv_sec * pow(10, 9) + start_ts.tv_nsec);
+      printf("%d: %lf[s]\n", i, results[i] * pow(10, -9));
+    }
+  } else if(strcmp(argv[1], "fread") == 0) {
+    for(i = 0;i < NUMBER_OF_MEASURE;i++) {
+      clock_gettime(CLOCK_MONOTONIC, &start_ts);
+      fread_copy(buff, buff_size);
+      clock_gettime(CLOCK_MONOTONIC, &end_ts);
+
+      results[i] = (end_ts.tv_sec * pow(10, 9) + end_ts.tv_nsec) - (start_ts.tv_sec * pow(10, 9) + start_ts.tv_nsec);
+      printf("%d: %lf[s]\n", i, results[i] * pow(10, -9));
+    }
+  } else if(strcmp(argv[1], "read") == 0) {
+    for(i = 0;i < NUMBER_OF_MEASURE;i++) {
+      clock_gettime(CLOCK_MONOTONIC, &start_ts);
+      read_copy(buff, buff_size);
+      clock_gettime(CLOCK_MONOTONIC, &end_ts);
+
+      results[i] = (end_ts.tv_sec * pow(10, 9) + end_ts.tv_nsec) - (start_ts.tv_sec * pow(10, 9) + start_ts.tv_nsec);
+      printf("%d: %lf[s]\n", i, results[i] * pow(10, -9));
+    }
   }
+  printf("average: %lf[s]\n", average(results) * pow(10, -9));
+  printf("\n");
+
+  free(buff);
 
   return 0;
 }
