@@ -26,6 +26,8 @@ void fgetc_copy() {
     exit(1);
   }
 
+  // If an end-of-file condition or read error occurs, EOF is returned instead.
+  // https://www.gnu.org/software/libc/manual/html_mono/libc.html#Formatted-Input
   while ((c = fgetc(fps)) != EOF) {
     if(fputc(c, fpd) == EOF) {
       perror("fputc");
