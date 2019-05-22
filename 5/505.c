@@ -33,8 +33,8 @@ int mygetchar(int timeout_interval) {
     }
     signal(SIGINT, SIG_DFL);
 
-    status = status >> 8;
-    if('A' <= status && status <= 'z') {
+    status = WEXITSTATUS(status);
+    if('!' <= status && status <= '~') {
       return status;
     } else {
       return status | 0xffffff00;
