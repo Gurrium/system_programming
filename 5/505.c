@@ -18,6 +18,29 @@ int mygetchar(int timeout_interval) {
   struct sigaction sa_timeout, sa_sigint;
   struct itimerval itimer;
 
+  int is_parent;
+  if((is_parent = fork()) < 0) {
+    perror("fork");
+    exit(1);
+  }
+
+  if(is_parent) {
+    signal(SIGINT, SIG_IGN);
+    int status;
+    if(wait(&status) < 0) {
+      perror("wait");
+      exit(1);
+    }
+    signal(SIGINT, SIG_DFL);
+
+    status = status >> 8;
+    if('A' <= status && status <= 'z') {
+      return status;
+    } else {
+      return status | 0xffffff00;
+    }
+  }
+
   memset(&sa_timeout, 0, sizeof(sa_timeout));
   memset(&sa_sigint, 0, sizeof(sa_sigint));
 
@@ -48,17 +71,20 @@ int mygetchar(int timeout_interval) {
     exit(1);
   }
 
+  sa_timeout.sa_handler = SIG_DFL;
+  if(sigaction(SIGALRM, &sa_timeout, NULL) < 0) {
+    perror("reset SIGALRM sigaction");
+    exit(1);
+  }
+  if(sigaction(SIGINT, &sa_timeout, NULL) < 0) {
+    perror("reset SIGINT sigaction");
+    exit(1);
+  }
+
   itimer.it_value.tv_sec = itimer.it_interval.tv_sec = 0;
   itimer.it_value.tv_usec = itimer.it_interval.tv_usec = 0;
   if(setitimer(ITIMER_REAL, &itimer, NULL) < 0) {
     perror("resetitimer");
-    exit(1);
-  }
-
-  sa_timeout.sa_handler = SIG_DFL;
-  sa_timeout.sa_flags = SA_RESTART;
-  if(sigaction(SIGALRM, &sa_timeout, NULL) < 0) {
-    perror("sigaction");
     exit(1);
   }
 
@@ -82,30 +108,11 @@ int main(int argc, char *argv[]) {
     printf("before calling mygetchar: %s", ctime(&current_time));
   }
 
-  int is_parent;
-  if((is_parent = fork()) < 0) {
-    perror("fork");
-    exit(1);
-  }
-
-  if(!is_parent) {
-    mygetchar(timeout_interval);
-  }
-
-  signal(SIGINT, SIG_IGN);
-  int status;
-  if(wait(&status) < 0) {
-    perror("wait");
-    exit(1);
-  }
-  signal(SIGINT, SIG_DFL);
-
-  printf("value returned from mygetchar is ");
-  status = status >> 8;
-  if('A' <= status && status <= 'z') {
-    printf("%c", status);
+  int result;
+  if((result = mygetchar(timeout_interval)) < 0) {
+    printf("value returned from mygetchar is %d", result);
   } else {
-    printf("%d", status | 0xffffff00);
+    printf("value returned from mygetchar is %c", result);
   }
   printf("\n");
 
