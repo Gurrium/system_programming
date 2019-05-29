@@ -26,7 +26,7 @@ void fgetc_copy() {
     exit(1);
   }
 
-  while (c = fgetc(fps)) {
+  for(c = fgetc(fps);!feof(fps);c = fgetc(fps)) {
     if(ferror(fps)) {
       perror("fgetc");
       fclose(fpd);
